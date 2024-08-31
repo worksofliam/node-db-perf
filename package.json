@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "start": "node --env-file=.env index.js"
+  },
+  "dependencies": {
+    "@ibm/mapepire-js": "^0.0.1",
+    "odbc": "^2.4.9"
+  }
+}
