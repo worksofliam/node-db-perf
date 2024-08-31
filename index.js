@@ -4,9 +4,10 @@ const dbs = {
 }
 
 const modes = {
-  s: `Single`,
-  sa: `Single-Await`,
-  p: `Pool`
+  s: `Single-Promise.all`,
+  sa: `Single-For-Await`,
+  p: `Pool-Promise.all`,
+  pa: `Pool-For-Await`
 }
 
 const args = process.argv.slice(2);
@@ -157,6 +158,19 @@ const work = async () => {
       }
 
       results = await Promise.all(promises);
+
+      await db.endPool();
+      break;
+
+    case `pa`:
+      spinUpStart = performance.now();
+      await db.connect(db.connectionParm, poolSizes.start, poolSizes.max);
+      spinUpEnd = performance.now();
+      spinupTime = spinUpStart - spinUpEnd;
+
+      for (let i = 0; i < count; i++) {
+        results.push(await poolExec(i, SQL_STATEMENT));
+      }
 
       await db.endPool();
       break;
