@@ -18,7 +18,7 @@ exports.connect = async (connectionString, startingSize = 1, maxSize = 5) => {
  * @param {(string|number)[]} bindingsValues 
  * @returns 
  */
-exports.query = async (statement, bindingsValues = []) => {
+exports.query = (statement, bindingsValues = []) => {
   return pool.query(statement, bindingsValues);
 }
 
