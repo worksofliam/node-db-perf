@@ -13,7 +13,7 @@ const modes = {
 const args = process.argv.slice(2);
 
 if (args.length < 3) {
-  console.error(`Usage: node index.js <db> <s|sa|p> <count>`);
+  console.error(`Usage: node index.js <db> <s|sa|p|pa> <count>`);
   process.exit(1);
 }
 
@@ -28,7 +28,7 @@ if (!db) {
   process.exit(1);
 }
 
-const SQL_STATEMENT = `SELECT * FROM SAMPLE.DEPARTMENT`;
+const SQL_STATEMENT = `VALUES (JOB_NAME)`;
 const poolSizes = {
   start: 5,
   max: 5
@@ -50,6 +50,7 @@ let reportName = `${db.name} - ${modes[mode]} - ${count} queries`;
 const work = async () => {
   const poolExec = async (uniqueId, statement) => {
     const now = performance.now();
+    console.log(`A: ${uniqueId} - ${now}`);
     const res = await db.query(statement);
     
     switch (db.name) {
@@ -57,15 +58,21 @@ const work = async () => {
         if (res.length === 0) {
           throw new Error(`No results from ODBC.`);
         }
+
+        console.log(res[0]);
         break;
       case `Mapepire`:
         if (res.data.length === 0) {
           throw new Error(`No results from Mapepire.`);
         }
+
+        console.log(res.data[0]);
         break;
     }
 
     const timeLength = performance.now() - now;
+
+    console.log(`B: ${uniqueId} - ${timeLength}`);
 
     return {uniqueId, timeLength};
   };
@@ -79,6 +86,7 @@ const work = async () => {
 
       for (let i = 0; i < count; i++) {
         const now = performance.now();
+        console.log(`A: ${i} - ${now}`);
 
         switch (db.name) {
           case `node-odbc`:
@@ -98,6 +106,7 @@ const work = async () => {
         }
 
         let timeLength = performance.now() - now;
+        console.log(`B: ${i} - ${timeLength}`);
         results.push({uniqueId: i, timeLength});
       }
 
@@ -114,6 +123,7 @@ const work = async () => {
         // since they have unique methods, we need to switch on the db name
         let res;
         const now = performance.now();
+        console.log(`A: ${uniqueId} - ${now}`);
         
         switch (db.name) {
           case `node-odbc`:
@@ -133,6 +143,7 @@ const work = async () => {
         }
 
         const timeLength = performance.now() - now;
+        console.log(`B: ${uniqueId} - ${timeLength}`);
 
         return {uniqueId, timeLength};
       };
@@ -150,8 +161,7 @@ const work = async () => {
       spinUpStart = performance.now();
       await db.connect(db.connectionParm, poolSizes.start, poolSizes.max);
       spinUpEnd = performance.now();
-
-      spinupTime = spinUpStart - spinUpEnd;
+      spinupTime = spinUpEnd - spinUpStart;
 
       for (let i = 0; i < count; i++) {
         promises.push(poolExec(i, SQL_STATEMENT));
@@ -166,7 +176,7 @@ const work = async () => {
       spinUpStart = performance.now();
       await db.connect(db.connectionParm, poolSizes.start, poolSizes.max);
       spinUpEnd = performance.now();
-      spinupTime = spinUpStart - spinUpEnd;
+      spinupTime = spinUpEnd - spinUpStart;
 
       for (let i = 0; i < count; i++) {
         results.push(await poolExec(i, SQL_STATEMENT));
