@@ -1,5 +1,6 @@
 const dbs = {
   odbc: require(`./db/odbc`),
+  odbcCustom: require(`./db/odbc-custom`),
   mapepire: require(`./db/mapepire`)
 }
 
@@ -28,7 +29,7 @@ if (!db) {
   process.exit(1);
 }
 
-const SQL_STATEMENT = `VALUES (JOB_NAME)`;
+const SQL_STATEMENT = `select * from sample.employee`;
 const poolSizes = {
   start: 5,
   max: 5
@@ -50,7 +51,7 @@ let reportName = `${db.name} - ${modes[mode]} - ${count} queries`;
 const work = async () => {
   const poolExec = async (uniqueId, statement) => {
     const now = performance.now();
-    console.log(`A: ${uniqueId} - ${now}`);
+    console.log(`A: ${uniqueId}`);
     const res = await db.query(statement);
     
     switch (db.name) {
@@ -59,14 +60,12 @@ const work = async () => {
           throw new Error(`No results from ODBC.`);
         }
 
-        console.log(res[0]);
         break;
       case `Mapepire`:
         if (res.data.length === 0) {
           throw new Error(`No results from Mapepire.`);
         }
 
-        console.log(res.data[0]);
         break;
     }
 
