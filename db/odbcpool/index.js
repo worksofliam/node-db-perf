@@ -90,7 +90,7 @@ exports.OdbcPool = class OdbcPool {
   /**
    * @param {string} statement 
    */
-  async execute(statement) {
+  async query(statement) {
     const job = await this.#getJob();
     const res = await job.query(statement);
 

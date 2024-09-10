@@ -23,7 +23,7 @@ exports.connect = (connectionString, startingSize = 1, maxSize = 5) => {
  * @returns 
  */
 exports.query = (statement) => {
-  return pool.execute(statement);
+  return pool.query(statement);
 }
 
 exports.endPool = () => {

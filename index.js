@@ -49,6 +49,7 @@ let singleJob;
 let reportName = `${db.name} - ${modes[mode]} - ${count} queries`;
 
 const work = async () => {
+  let isPooling = false;
   const poolExec = async (uniqueId, statement) => {
     const now = performance.now();
     console.log(`A: ${uniqueId}`);
@@ -56,6 +57,7 @@ const work = async () => {
     
     switch (db.name) {
       case `node-odbc`:
+      case `node-odbc-custom`:
         if (res.length === 0) {
           throw new Error(`No results from ODBC.`);
         }
@@ -89,6 +91,7 @@ const work = async () => {
 
         switch (db.name) {
           case `node-odbc`:
+          case `node-odbc-custom`:
             res = await singleJob.query(SQL_STATEMENT);
 
             if (res.length === 0) {
@@ -125,6 +128,7 @@ const work = async () => {
         console.log(`A: ${uniqueId} - ${now}`);
         
         switch (db.name) {
+          case `node-odbc-custom`:
           case `node-odbc`:
             res = await singleJob.query(statement);
 
@@ -157,6 +161,7 @@ const work = async () => {
       break;
 
     case `p`:
+      isPooling = true;
       spinUpStart = performance.now();
       await db.connect(db.connectionParm, poolSizes.start, poolSizes.max);
       spinUpEnd = performance.now();
@@ -172,6 +177,7 @@ const work = async () => {
       break;
 
     case `pa`:
+      isPooling = true;
       spinUpStart = performance.now();
       await db.connect(db.connectionParm, poolSizes.start, poolSizes.max);
       spinUpEnd = performance.now();
@@ -209,16 +215,26 @@ const work = async () => {
   console.log(`SQL used:`);
   console.log(`\t${SQL_STATEMENT}`);
   console.log(``);
-  console.log(`Pool startup:`);
-  console.log(`\tStart size: ${poolSizes.start}`);
-  console.log(`\tMax size:   ${poolSizes.max}`);
-  console.log(`\tTime:       ${spinupTime}ms`);
-  console.log(``);
-  console.log(`Total requests:      ${count}`);
+
+  if (isPooling) {
+    console.log(`Pool startup:`);
+    console.log(`\tStart size: ${poolSizes.start}`);
+    console.log(`\tMax size:   ${poolSizes.max}`);
+    console.log(`\tTime:       ${spinupTime}ms`);
+    console.log(``);
+  } else {
+    console.log(`Single connection startup:`);
+    console.log(`\tTime: ${spinupTime}ms`);
+    console.log(``);
+  }
+
+  const type = isPooling ? `pool request` : `statement`;
+
+  console.log(`Total ${type}s:      ${count}`);
   console.log(`Total time:         ${total}ms`);
   console.log(`Average time:       ${average}ms`);
-  console.log(`Fastest request:      ${fastest}ms (request ${fastestIndex + 1})`);
-  console.log(`Slowest request:      ${slowest}ms (request ${slowestIndex + 1})`);
+  console.log(`Fastest ${type}:      ${fastest}ms (${type} ${fastestIndex + 1})`);
+  console.log(`Slowest ${type}:      ${slowest}ms (${type} ${slowestIndex + 1})`);
 
   console.log(``);
   console.log(`Keynote chart:`);
