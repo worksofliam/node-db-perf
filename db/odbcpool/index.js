@@ -20,16 +20,6 @@ exports.OdbcPool = class OdbcPool {
     this.startingSize = startingSize;
 
     this.timeoutLength = 10;
-
-    // setInterval(() => {
-    //   console.clear();
-    //   console.log(`Pool size: ${this.pool.length}`);
-    //   console.log(`Ready jobs: ${this.getReadyJobs()}`);
-
-    //   for (let i = 0; i < this.pool.length; i++) {
-    //     console.log(`Job ${i}: ${this.pool[i].state}`);
-    //   }
-    // }, 5);
   }
 
   connect() {
@@ -75,10 +65,12 @@ exports.OdbcPool = class OdbcPool {
       const waitedJob = await new Promise((resolve, reject) => {
         let interval = setInterval(() => {
           if (this.getReadyJobs() > 0) {
-            clearInterval(interval);
             const job = this.#findReadyJob();
-            job.state = JobState.Busy;
-            resolve(job);
+            if (job) {
+              job.state = JobState.Busy;
+              clearInterval(interval);
+              resolve(job);    
+            }
           }
         }, this.timeoutLength);
       });
