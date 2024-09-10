@@ -222,10 +222,14 @@ const work = async () => {
     console.log(`\tMax size:   ${poolSizes.max}`);
     console.log(`\tTime:       ${spinupTime}ms`);
     console.log(``);
+    console.log(`Pooling is being used. The test runner results are based on how long`);
+    console.log(`it takes to execute a query from a pool of connections.`);
   } else {
     console.log(`Single connection startup:`);
     console.log(`\tTime: ${spinupTime}ms`);
     console.log(``);
+    console.log(`A single job is being used. The test runner results are based on how long`);
+    console.log(`it takes to execute a query using a single connection.`);
   }
 
   const type = isPooling ? `pool request` : `statement`;
