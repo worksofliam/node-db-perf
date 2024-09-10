@@ -8,19 +8,21 @@ const modes = {
   s: `Single-Promise.all`,
   sa: `Single-For-Await`,
   p: `Pool-Promise.all`,
-  pa: `Pool-For-Await`
+  pa: `Pool-For-Await`,
+  ps: `Pool-Promise.all-Grouped`
 }
 
 const args = process.argv.slice(2);
 
 if (args.length < 3) {
-  console.error(`Usage: node index.js <db> <s|sa|p|pa> <count>`);
+  console.error(`Usage: node index.js <db> <s|sa|p|pa|ps> <count> [seconds]`);
   process.exit(1);
 }
 
 const chosenDb = args[0];
 const mode = args[1];
 const count = parseInt(args[2]);
+const totalSeconds = parseInt(args[3]) || 0;
 
 const db = dbs[chosenDb];
 
@@ -46,7 +48,16 @@ let spinUpEnd;
 let spinupTime;
 let singleJob;
 
+let runningGrouped = false;
+let queriesPerSecond = 0;
+
 let reportName = `${db.name} - ${modes[mode]} - ${count} queries`;
+
+const wait = async (msLength) => {
+  return new Promise(resolve => {
+    setTimeout(resolve, msLength);
+  });
+}
 
 const work = async () => {
   let isPooling = false;
@@ -182,6 +193,38 @@ const work = async () => {
 
       await db.endPool();
       break;
+    
+    case `ps`:
+      isPooling = true;
+      spinUpStart = performance.now();
+      await db.connect(db.connectionParm, poolSizes.start, poolSizes.max);
+      spinUpEnd = performance.now();
+      spinupTime = spinUpEnd - spinUpStart;
+
+      runningGrouped = true;
+      queriesPerSecond = count / totalSeconds;
+      
+      let currentSeconds = 0;
+
+      const secondInterval = setInterval(async () => {
+        const localPromises = [];
+        currentSeconds++;
+
+        for (let i = 0; i < queriesPerSecond; i++) {
+          localPromises.push(poolExec(i, SQL_STATEMENT));
+        }
+
+        results.push(...(await Promise.all(localPromises)));
+
+        if (currentSeconds >= totalSeconds) {
+          clearInterval(secondInterval);
+        }
+      }, 1000);
+
+      await wait(totalSeconds * 1000);
+
+      await db.endPool();
+      break;
 
     default:
       console.error(`Unknown mode ${mode}`);
@@ -210,19 +253,26 @@ const work = async () => {
   console.log(``);
 
   if (isPooling) {
+    console.log(`Pooling is being used. The test runner results are based on how long`);
+    console.log(`it takes to execute a query from a pool of connections.`);
+    console.log(``);
     console.log(`Pool startup:`);
     console.log(`\tStart size: ${poolSizes.start}`);
     console.log(`\tMax size:   ${poolSizes.max}`);
     console.log(`\tTime:       ${spinupTime}ms`);
-    console.log(``);
-    console.log(`Pooling is being used. The test runner results are based on how long`);
-    console.log(`it takes to execute a query from a pool of connections.`);
+
+    if (runningGrouped) {
+      console.log(``);
+      console.log(`Grouped query execution:`);
+      console.log(`\tQueries per second: ${queriesPerSecond}`);
+      console.log(`\tTotal seconds:      ${totalSeconds}`);
+    }
   } else {
-    console.log(`Single connection startup:`);
-    console.log(`\tTime: ${spinupTime}ms`);
-    console.log(``);
     console.log(`A single job is being used. The test runner results are based on how long`);
     console.log(`it takes to execute a query using a single connection.`);
+    console.log(``);
+    console.log(`Single connection startup:`);
+    console.log(`\tTime: ${spinupTime}ms`);
   }
 
   console.log(``);
