@@ -1,5 +1,11 @@
 const odbc = require("odbc");
 
+const JobState = {
+  Ready: "ready",
+  Busy: "busy",
+  Ended: "ended"
+}
+
 exports.OdbcPool = class OdbcPool {
   /**
    * @param {string} connectionString 
@@ -13,7 +19,17 @@ exports.OdbcPool = class OdbcPool {
     this.maxSize = maxSize;
     this.startingSize = startingSize;
 
-    this.timeoutLength = 50;
+    this.timeoutLength = 10;
+
+    // setInterval(() => {
+    //   console.clear();
+    //   console.log(`Pool size: ${this.pool.length}`);
+    //   console.log(`Ready jobs: ${this.getReadyJobs()}`);
+
+    //   for (let i = 0; i < this.pool.length; i++) {
+    //     console.log(`Job ${i}: ${this.pool[i].state}`);
+    //   }
+    // }, 5);
   }
 
   connect() {
@@ -25,55 +41,48 @@ exports.OdbcPool = class OdbcPool {
     return Promise.all(promises);
   }
 
-  getTotalJobs() {
-    return this.pool.length + this.usedJobs;
+  getReadyJobs() {
+    return this.pool.filter(job => job.state === JobState.Ready).length;
   }
 
   async newConnection(toPool = true) {
     const newJob = await odbc.connect(this.connectionString);
     if (toPool) {
+      console.log(newJob.odbcConnection);
+      newJob.state = JobState.Ready;
       this.pool.push(newJob);
     } else {
+      newJob.state = JobState.Busy;
       return newJob;
     }
   }
 
-  /**
-   * @param {odbc.Connection} connection 
-   */
-  #addJob(connection) {
-    if (this.pool.length < this.maxSize) {
-      this.usedJobs = Math.max(0, this.usedJobs - 1);
-      this.pool.push(connection);
-    } else {
-      connection.close();
-    }
+  #findReadyJob() {
+    return this.pool.find(job => job.state === JobState.Ready);
   }
 
-  /**
-   * @returns {Promise<odbc.Connection>}
-   */
   async #getJob() {
-    if (this.pool.length > 0) {
-      this.usedJobs++;
-      return this.pool.shift();
-    } else if (this.getTotalJobs() < this.maxSize) {
+    if (this.getReadyJobs() > 0) {
+      const job = this.#findReadyJob();
+      job.state = JobState.Busy;
+      return job;
+      
+    } else if (this.pool.length < this.maxSize) {
       throw new Error(`TESTING: Don't hit this!`);
       const newJob = await this.newConnection(false);
-      this.usedJobs++;
       return newJob;
     } else {
-      console.log(`Waiting for new job...`);
       const waitedJob = await new Promise((resolve, reject) => {
         let interval = setInterval(() => {
-          if (this.pool.length > 0) {
+          if (this.getReadyJobs() > 0) {
             clearInterval(interval);
-            resolve(this.pool.shift());
+            const job = this.#findReadyJob();
+            job.state = JobState.Busy;
+            resolve(job);
           }
-        }, 10);
+        }, this.timeoutLength);
       });
 
-      this.usedJobs++;
       return waitedJob;
     }
   }
@@ -84,7 +93,8 @@ exports.OdbcPool = class OdbcPool {
   async execute(statement) {
     const job = await this.#getJob();
     const res = await job.query(statement);
-    this.#addJob(job);
+
+    job.state = JobState.Ready;
 
     return res;
   }
@@ -92,6 +102,7 @@ exports.OdbcPool = class OdbcPool {
   close() {
     let promises = [];
     for (let i = 0; i < this.pool.length; i++) {
+      this.pool[i].state = JobState.Ended;
       promises.push(this.pool[i].close());
     }
 
