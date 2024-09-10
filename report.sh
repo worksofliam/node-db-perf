@@ -29,3 +29,11 @@ npm run start odbc sa 50 >> single-await.txt
 npm run start odbcCustom sa 50 >> single-await.txt
 
 npm run start mapepire sa 50 >> single-await.txt
+
+echo "" > pool-promise-grouped.txt
+
+npm run start odbc ps 50 5 >> pool-promise-grouped.txt
+
+npm run start odbcCustom ps 50 5 >> pool-promise-grouped.txt
+
+npm run start mapepire ps 50 5 >> pool-promise-grouped.txt
