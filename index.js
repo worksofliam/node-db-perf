@@ -52,7 +52,6 @@ const work = async () => {
   let isPooling = false;
   const poolExec = async (uniqueId, statement) => {
     const now = performance.now();
-    console.log(`A: ${uniqueId}`);
     const res = await db.query(statement);
     
     switch (db.name) {
@@ -73,8 +72,6 @@ const work = async () => {
 
     const timeLength = performance.now() - now;
 
-    console.log(`B: ${uniqueId} - ${timeLength}`);
-
     return {uniqueId, timeLength};
   };
 
@@ -87,7 +84,6 @@ const work = async () => {
 
       for (let i = 0; i < count; i++) {
         const now = performance.now();
-        console.log(`A: ${i} - ${now}`);
 
         switch (db.name) {
           case `node-odbc`:
@@ -108,7 +104,6 @@ const work = async () => {
         }
 
         let timeLength = performance.now() - now;
-        console.log(`B: ${i} - ${timeLength}`);
         results.push({uniqueId: i, timeLength});
       }
 
@@ -125,7 +120,6 @@ const work = async () => {
         // since they have unique methods, we need to switch on the db name
         let res;
         const now = performance.now();
-        console.log(`A: ${uniqueId} - ${now}`);
         
         switch (db.name) {
           case `node-odbc-custom`:
@@ -146,7 +140,6 @@ const work = async () => {
         }
 
         const timeLength = performance.now() - now;
-        console.log(`B: ${uniqueId} - ${timeLength}`);
 
         return {uniqueId, timeLength};
       };
@@ -232,6 +225,8 @@ const work = async () => {
     console.log(`it takes to execute a query using a single connection.`);
   }
 
+  console.log(``);
+
   const type = isPooling ? `pool request` : `statement`;
 
   console.log(`Total ${type}s:      ${count}`);
@@ -242,8 +237,8 @@ const work = async () => {
 
   console.log(``);
   console.log(`Keynote chart:`);
-  console.log(results.map(r => r.uniqueId).join(`\t`));
-  console.log(results.map(r => r.timeLength).join(`\t`));
+  console.log(`x ` + results.map(r => r.uniqueId).join(`\t`));
+  console.log(`${chosenDb}\t` + results.map(r => r.timeLength).join(`\t`));
   console.log(``);
   console.log(`---------------------------------`);
 

@@ -38,7 +38,6 @@ exports.OdbcPool = class OdbcPool {
   async newConnection(toPool = true) {
     const newJob = await odbc.connect(this.connectionString);
     if (toPool) {
-      console.log(newJob.odbcConnection);
       newJob.state = JobState.Ready;
       this.pool.push(newJob);
     } else {
