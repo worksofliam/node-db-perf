@@ -214,11 +214,11 @@ const work = async () => {
   console.log(`\tMax size:   ${poolSizes.max}`);
   console.log(`\tTime:       ${spinupTime}ms`);
   console.log(``);
-  console.log(`Total queries:      ${count}`);
+  console.log(`Total requests:      ${count}`);
   console.log(`Total time:         ${total}ms`);
   console.log(`Average time:       ${average}ms`);
-  console.log(`Fastest query:      ${fastest}ms (query ${fastestIndex + 1})`);
-  console.log(`Slowest query:      ${slowest}ms (query ${slowestIndex + 1})`);
+  console.log(`Fastest request:      ${fastest}ms (request ${fastestIndex + 1})`);
+  console.log(`Slowest request:      ${slowest}ms (request ${slowestIndex + 1})`);
 
   console.log(``);
   console.log(`Keynote chart:`);
