@@ -1,4 +1,5 @@
-report.txt
+pool*.txt
+single*.txt
 .DS_Store
 node_modules
 .env
